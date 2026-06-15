@@ -95,6 +95,35 @@ export async function onRequest(context) {
       return success({ id: recipeId }, 201);
     }
 
+    // PUT /api/recipes/:id — 更新
+    if (method === 'PUT' && id) {
+      const body = await request.json();
+      if (!body.name) return error('缺少必填字段: name');
+      const steps = JSON.stringify(body.steps || []);
+      const tags = body.tags ? (Array.isArray(body.tags) ? body.tags.join(',') : body.tags) : '';
+      await db.prepare(
+        `UPDATE recipes SET name = ?, image = ?, steps = ?, difficulty = ?, cook_time = ?, tips = ?, tags = ?, updated_at = datetime('now') WHERE id = ?`
+      ).bind(
+        body.name, body.image || null, steps,
+        body.difficulty || '简单', body.cook_time || 15,
+        body.tips || null, tags, id
+      ).run();
+
+      // 替换食材
+      await db.prepare('DELETE FROM recipe_ingredients WHERE recipe_id = ?').bind(id).run();
+      if (body.ingredients && body.ingredients.length > 0) {
+        const stmt = db.prepare(
+          `INSERT INTO recipe_ingredients (recipe_id, ingredient_name, quantity, unit, optional)
+           VALUES (?, ?, ?, ?, ?)`
+        );
+        for (const ing of body.ingredients) {
+          await stmt.bind(id, ing.name, ing.quantity || 0, ing.unit || '', ing.optional ? 1 : 0).run();
+        }
+      }
+
+      return success({ id });
+    }
+
     // DELETE /api/recipes/:id
     if (method === 'DELETE' && id) {
       await db.prepare('DELETE FROM recipes WHERE id = ?').bind(id).run();
