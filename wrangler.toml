@@ -5,7 +5,7 @@ pages_build_output_dir = "public"
 [[d1_databases]]
 binding = "DB"
 database_name = "recipe-fridge-db"
-database_id = ""
+database_id = "4ff49f01-a251-4b6c-b006-3046d37a1082"
 
 [env.production]
 vars = { DEEPSEEK_API_KEY = "" }
