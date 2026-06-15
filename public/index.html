@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#16a34a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="description" content="智能冰箱 - 基于食材的 AI 食谱推荐工具">
+<title>智能冰箱</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🥘</text></svg>">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="app">
+  <header id="header">
+    <h1 id="page-title">智能冰箱</h1>
+  </header>
+  <main id="main-content"></main>
+  <nav id="bottom-nav">
+    <a href="#fridge" class="nav-item active" data-page="fridge">
+      <span class="nav-icon">🧊</span>
+      <span class="nav-label">冰箱</span>
+    </a>
+    <a href="#recipes" class="nav-item" data-page="recipes">
+      <span class="nav-icon">📖</span>
+      <span class="nav-label">菜谱</span>
+    </a>
+    <a href="#recommend" class="nav-item" data-page="recommend">
+      <span class="nav-icon">🤖</span>
+      <span class="nav-label">推荐</span>
+    </a>
+    <a href="#logs" class="nav-item" data-page="logs">
+      <span class="nav-icon">📝</span>
+      <span class="nav-label">记录</span>
+    </a>
+  </nav>
+</div>
+<script src="/js/api.js"></script>
+<script src="/js/app.js"></script>
+<script src="/js/fridge.js"></script>
+<script src="/js/recipes.js"></script>
+<script src="/js/recommend.js"></script>
+<script src="/js/cook-logs.js"></script>
+</body>
+</html>
