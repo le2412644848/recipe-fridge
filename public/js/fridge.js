@@ -16,7 +16,7 @@ const FridgePage = {
 
   async loadList() {
     const listEl = document.getElementById('fridge-list');
-    App.showLoading(listEl);
+    App.showLoading(listEl, true);
     try {
       this.ingredients = await Api.getIngredients();
       this.renderList(listEl);
@@ -27,7 +27,7 @@ const FridgePage = {
 
   renderList(container) {
     if (!this.ingredients.length) {
-      container.innerHTML = '<div class="empty-state"><p>冰箱里还没有食材，去添加一些吧</p></div>';
+      container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🧊</div><p>冰箱里还没有食材，去添加一些吧</p></div>';
       return;
     }
 

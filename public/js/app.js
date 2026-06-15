@@ -3,11 +3,36 @@ const App = {
   currentPage: 'fridge',
 
   init() {
+    // 恢复夜间模式
+    const saved = localStorage.getItem('theme');
+    if (saved === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+    this.renderHeader();
     window.addEventListener('hashchange', () => this.route());
     this.route();
   },
 
+  renderHeader() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const themeBtn = document.getElementById('theme-toggle');
+    if (themeBtn) themeBtn.textContent = isDark ? '☀️' : '🌙';
+  },
+
+  toggleTheme() {
+    const html = document.documentElement;
+    const isDark = html.getAttribute('data-theme') === 'dark';
+    if (isDark) {
+      html.removeAttribute('data-theme');
+      localStorage.setItem('theme', 'light');
+    } else {
+      html.setAttribute('data-theme', 'dark');
+      localStorage.setItem('theme', 'dark');
+    }
+    this.renderHeader();
+  },
+
   route() {
+    // 切换页面时关闭可能打开的弹窗
+    this.closeModal();
     const hash = location.hash.slice(1) || 'fridge';
     this.currentPage = hash;
     const container = document.getElementById('main-content');
@@ -41,7 +66,11 @@ const App = {
     }
   },
 
-  showLoading(container) {
+  showLoading(container, skeleton) {
+    if (skeleton) {
+      container.innerHTML = '<div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div>';
+      return;
+    }
     container.innerHTML = '<div class="loading-state"><div class="spinner"></div><p>加载中...</p></div>';
   },
 

@@ -1,5 +1,5 @@
-// functions/api/recipes.js
-import { getDb, success, error } from './_db.js';
+// functions/api/recipes/[[catchall]].js
+import { getDb, success, error } from '../_db.js';
 
 export async function onRequest(context) {
   const { request } = context;
@@ -26,17 +26,27 @@ export async function onRequest(context) {
     if (method === 'GET' && !id) {
       const q = url.searchParams.get('q');
       const ingredient = url.searchParams.get('ingredient');
+      const tag = url.searchParams.get('tag');
       let sql = 'SELECT r.* FROM recipes r';
       const params = [];
+      const wheres = [];
 
       if (ingredient) {
         sql = `SELECT DISTINCT r.* FROM recipes r
-               JOIN recipe_ingredients ri ON r.id = ri.recipe_id
-               WHERE ri.ingredient_name = ?`;
+               JOIN recipe_ingredients ri ON r.id = ri.recipe_id`;
+        wheres.push('ri.ingredient_name = ?');
         params.push(ingredient);
-      } else if (q) {
-        sql = 'SELECT r.* FROM recipes r WHERE r.name LIKE ?';
+      }
+      if (tag) {
+        wheres.push('r.tags LIKE ?');
+        params.push(`%${tag}%`);
+      }
+      if (q) {
+        wheres.push('r.name LIKE ?');
         params.push(`%${q}%`);
+      }
+      if (wheres.length > 0) {
+        sql += ' WHERE ' + wheres.join(' AND ');
       }
       sql += ' ORDER BY r.cook_count DESC';
       const result = await db.prepare(sql).bind(...params).all();
@@ -60,13 +70,14 @@ export async function onRequest(context) {
       const body = await request.json();
       if (!body.name) return error('缺少必填字段: name');
       const steps = JSON.stringify(body.steps || []);
+      const tags = body.tags ? (Array.isArray(body.tags) ? body.tags.join(',') : body.tags) : '';
       const result = await db.prepare(
-        `INSERT INTO recipes (name, image, steps, difficulty, cook_time, tips, source)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO recipes (name, image, steps, difficulty, cook_time, tips, source, tags)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
       ).bind(
         body.name, body.image || null, steps,
         body.difficulty || '简单', body.cook_time || 15,
-        body.tips || null, body.source || 'manual'
+        body.tips || null, body.source || 'manual', tags
       ).run();
 
       const recipeId = result.meta.last_row_id;

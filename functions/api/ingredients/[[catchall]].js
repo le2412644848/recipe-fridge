@@ -1,5 +1,5 @@
-// functions/api/ingredients.js
-import { getDb, success, error } from './_db.js';
+// functions/api/ingredients/[[catchall]].js
+import { getDb, success, error } from '../_db.js';
 
 export async function onRequest(context) {
   const { request } = context;
