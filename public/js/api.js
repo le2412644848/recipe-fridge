@@ -32,6 +32,7 @@ const Api = {
   },
   getRecipe(id) { return this.request('GET', `/api/recipes/${id}`); },
   addRecipe(data) { return this.request('POST', '/api/recipes', data); },
+  updateRecipe(id, data) { return this.request('PUT', `/api/recipes/${id}`, data); },
   deleteRecipe(id) { return this.request('DELETE', `/api/recipes/${id}`); },
 
   // AI

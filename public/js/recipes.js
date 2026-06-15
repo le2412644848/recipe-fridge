@@ -145,6 +145,7 @@ const RecipesPage = {
         ${r.tips ? `<div style="margin-top:12px;padding:8px;background:#fff7ed;border-radius:6px;font-size:12px;color:var(--warning);">💡 ${App.escapeHtml(r.tips)}</div>` : ''}
 
         <button class="btn btn-block" id="cook-btn" style="margin-top:12px;">✅ 我做过了</button>
+        <button class="btn btn-block" id="edit-recipe-btn" style="margin-top:8px;background:var(--card-bg);color:var(--text);border:1px solid var(--border);">✏️ 编辑</button>
         <button class="btn btn-block" id="shopping-list-btn" style="margin-top:8px;background:var(--card-bg);color:var(--text);border:1px solid var(--border);">🛒 购物清单</button>
         <button class="btn btn-block" id="delete-recipe-btn" style="margin-top:8px;background:var(--danger);">删除菜谱</button>
       </div>
@@ -152,6 +153,7 @@ const RecipesPage = {
 
     document.getElementById('back-btn').addEventListener('click', () => { window.location.hash = 'recipes'; });
     document.getElementById('shopping-list-btn').addEventListener('click', () => this.showShoppingList(r.ingredients || []));
+    document.getElementById('edit-recipe-btn').addEventListener('click', () => this.showForm(r));
     document.getElementById('cook-btn').addEventListener('click', async () => {
       try {
         await Api.addCookLog({ recipe_id: r.id });
@@ -341,44 +343,45 @@ const RecipesPage = {
     });
   },
 
-  showForm() {
+  showForm(existing) {
+    const isEdit = !!existing;
     const overlay = App.showModal(`
-      <div class="modal-title">添加菜谱</div>
+      <div class="modal-title">${isEdit ? '编辑菜谱' : '添加菜谱'}</div>
       <div class="form-group">
         <label class="form-label">菜名</label>
-        <input class="input" id="r-name" placeholder="菜名">
+        <input class="input" id="r-name" placeholder="菜名" value="${isEdit ? App.escapeHtml(existing.name) : ''}">
       </div>
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">烹饪时间(分钟)</label>
-          <input class="input" id="r-time" type="number" value="15" min="1">
+          <input class="input" id="r-time" type="number" value="${isEdit ? existing.cook_time : 15}" min="1">
         </div>
         <div class="form-group">
           <label class="form-label">难度</label>
           <select class="input" id="r-difficulty">
-            <option>简单</option>
-            <option>中等</option>
-            <option>困难</option>
+            ${['简单', '中等', '困难'].map(d =>
+              `<option ${isEdit && existing.difficulty === d ? 'selected' : ''}>${d}</option>`
+            ).join('')}
           </select>
         </div>
       </div>
       <div class="form-group">
         <label class="form-label">食材（每行一个，格式: 名称,数量,单位,是否可选(可省略)）</label>
-        <textarea class="input" id="r-ingredients" rows="4" placeholder="番茄,2,个&#10;鸡蛋,3,个"></textarea>
+        <textarea class="input" id="r-ingredients" rows="4" placeholder="番茄,2,个&#10;鸡蛋,3,个">${isEdit ? App.escapeHtml((existing.ingredients || []).map(i => [i.ingredient_name, i.quantity, i.unit, i.optional ? '是' : ''].filter(Boolean).join(',')).join('\n')) : ''}</textarea>
       </div>
       <div class="form-group">
         <label class="form-label">做法步骤（每行一步）</label>
-        <textarea class="input" id="r-steps" rows="5" placeholder="番茄切块&#10;鸡蛋打散&#10;炒锅加油..."></textarea>
+        <textarea class="input" id="r-steps" rows="5" placeholder="番茄切块&#10;鸡蛋打散&#10;炒锅加油...">${isEdit ? App.escapeHtml((existing.steps || []).join('\n')) : ''}</textarea>
       </div>
       <div class="form-group">
         <label class="form-label">小贴士（可选）</label>
-        <input class="input" id="r-tips" placeholder="小贴士">
+        <input class="input" id="r-tips" placeholder="小贴士" value="${isEdit && existing.tips ? App.escapeHtml(existing.tips) : ''}">
       </div>
       <div class="form-group">
         <label class="form-label">标签（英文逗号分隔，可选）</label>
-        <input class="input" id="r-tags" placeholder="例如：川菜,快手菜,早餐">
+        <input class="input" id="r-tags" placeholder="例如：川菜,快手菜,早餐" value="${isEdit && existing.tags ? App.escapeHtml(existing.tags) : ''}">
       </div>
-      <button class="btn btn-block" id="r-save">保存菜谱</button>
+      <button class="btn btn-block" id="r-save">${isEdit ? '保存修改' : '保存菜谱'}</button>
     `);
 
     document.getElementById('r-save').addEventListener('click', async () => {
@@ -398,18 +401,40 @@ const RecipesPage = {
       const tags = document.getElementById('r-tags').value.split(/[,，]/).map(s => s.trim()).filter(Boolean);
 
       try {
-        await Api.addRecipe({
-          name,
-          steps,
-          ingredients,
-          tags,
-          cook_time: parseInt(document.getElementById('r-time').value) || 15,
-          difficulty: document.getElementById('r-difficulty').value,
-          tips: document.getElementById('r-tips').value.trim() || null
-        });
-        App.closeModal();
-        App.showToast('菜谱已添加');
-        await this.search();
+        if (isEdit) {
+          await Api.updateRecipe(existing.id, {
+            name,
+            steps,
+            ingredients,
+            tags,
+            cook_time: parseInt(document.getElementById('r-time').value) || 15,
+            difficulty: document.getElementById('r-difficulty').value,
+            tips: document.getElementById('r-tips').value.trim() || null
+          });
+          App.closeModal();
+          App.showToast('菜谱已更新');
+          // 重新获取详情并刷新页面
+          this.detail = await Api.getRecipe(existing.id);
+          if (location.hash === '#recipe-detail') {
+            const container = document.getElementById('main-content');
+            await this.renderDetail(container);
+          } else {
+            window.location.hash = 'recipe-detail';
+          }
+        } else {
+          await Api.addRecipe({
+            name,
+            steps,
+            ingredients,
+            tags,
+            cook_time: parseInt(document.getElementById('r-time').value) || 15,
+            difficulty: document.getElementById('r-difficulty').value,
+            tips: document.getElementById('r-tips').value.trim() || null
+          });
+          App.closeModal();
+          App.showToast('菜谱已添加');
+          await this.search();
+        }
       } catch (e) {
         alert('保存失败: ' + e.message);
       }
