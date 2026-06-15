@@ -102,7 +102,7 @@ export async function onRequest(context) {
       const steps = JSON.stringify(body.steps || []);
       const tags = body.tags ? (Array.isArray(body.tags) ? body.tags.join(',') : body.tags) : '';
       await db.prepare(
-        `UPDATE recipes SET name = ?, image = ?, steps = ?, difficulty = ?, cook_time = ?, tips = ?, tags = ?, updated_at = datetime('now') WHERE id = ?`
+        `UPDATE recipes SET name = ?, image = ?, steps = ?, difficulty = ?, cook_time = ?, tips = ?, tags = ? WHERE id = ?`
       ).bind(
         body.name, body.image || null, steps,
         body.difficulty || '简单', body.cook_time || 15,
