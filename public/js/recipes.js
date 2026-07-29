@@ -46,7 +46,9 @@ const RecipesPage = {
     const listEl = document.getElementById('recipe-list');
     App.showLoading(listEl, true);
     try {
-      this.recipes = (await Api.getRecipes(q, this.currentTag)) || [];
+      const result = await Api.getRecipes(q, this.currentTag);
+      this.recipes = result.data || result || [];
+      this.totalRecipes = result.total || 0;
       this.renderList(listEl);
       // 从搜索结果提取所有标签
       const tags = new Set();

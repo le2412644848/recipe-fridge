@@ -27,6 +27,13 @@ export async function onRequest(context) {
       const q = url.searchParams.get('q');
       const ingredient = url.searchParams.get('ingredient');
       const tag = url.searchParams.get('tag');
+      const page = parseInt(url.searchParams.get('page')) || 1;
+      const limit = Math.min(parseInt(url.searchParams.get('limit')) || 50, 100);
+      const offset = (page - 1) * limit;
+      
+      // First get total count
+      let countSql = 'SELECT COUNT(*) as total FROM recipes r';
+      const countParams = [];
       let sql = 'SELECT r.* FROM recipes r';
       const params = [];
       const wheres = [];
@@ -46,11 +53,19 @@ export async function onRequest(context) {
         params.push(`%${q}%`);
       }
       if (wheres.length > 0) {
+        countSql += ' WHERE ' + wheres.join(' AND ');
         sql += ' WHERE ' + wheres.join(' AND ');
       }
+      // Count query
+      const countResult = await db.prepare(countSql).bind(...countParams).first();
+      const total = countResult ? countResult.total : 0;
+      
       sql += ' ORDER BY r.cook_count DESC';
-      const result = await db.prepare(sql).bind(...params).all();
-      return success(result.results.map(r => ({ ...r, steps: JSON.parse(r.steps) })));
+      sql += ' LIMIT ? OFFSET ?';
+      const allParams = [...params, limit, offset];
+      const result = await db.prepare(sql).bind(...allParams).all();
+      const recipes = result.results.map(r => ({ ...r, steps: JSON.parse(r.steps) }));
+      return success({ total, page, limit, data: recipes });
     }
 
     // GET /api/recipes/:id — 详情

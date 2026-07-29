@@ -23,12 +23,13 @@ const Api = {
   },
 
   // 菜谱
-  getRecipes(q, tag) {
+  getRecipes(q, tag, page = 1, limit = 50) {
     const params = new URLSearchParams();
     if (q) params.set('q', q);
     if (tag) params.set('tag', tag);
-    const qs = params.toString();
-    return this.request('GET', `/api/recipes${qs ? '?' + qs : ''}`);
+    params.set('page', page);
+    params.set('limit', limit);
+    return this.request('GET', `/api/recipes?${params.toString()}`);
   },
   getRecipe(id) { return this.request('GET', `/api/recipes/${id}`); },
   addRecipe(data) { return this.request('POST', '/api/recipes', data); },
